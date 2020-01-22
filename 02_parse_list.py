@@ -5,6 +5,7 @@ import os
 import time
 import requests
 from lxml import html
+import config
 
 
 # ШАГ 2
@@ -59,11 +60,11 @@ def process(dw_TheadName):
     while not work_queue.empty():
         _num_post = work_queue.get()
         time.sleep(.5)
-        page_url = '{}{}'.format('https://www.roller.ru/forum/viewtopic.php?f=3&t=', _num_post)  # ссылка для скачивания
-        page_html = '{}{}{}'.format(_post_folder, _num_post, '.html')  # путь для сохранения
+        page_url = f"https://www.roller.ru/forum/viewtopic.php?f=3&t={_num_post}"  # ссылка для скачивания
+        page_html = f"{_post_folder}{_num_post}.html"  # путь для сохранения
         # print(page_url)
         # print(page_html)
-        print('THEAD {} - {}'.format(page_url, dw_TheadName))
+        print(f"THEAD {page_url} - {dw_TheadName}")
         r = get_html(page_url, _num_post)
         with open(page_html, 'w', encoding='UTF-8') as fw:
             fw.write(r)
@@ -72,7 +73,7 @@ def process(dw_TheadName):
 def main():
     list_th = []
     for i in range(5):
-        p1 = Thread(target=process, args=['Thead{}'.format(i)])
+        p1 = Thread(target=process, args=[f'Thead{i}'])
         list_th.append(p1)
 
     for th in list_th:
@@ -83,9 +84,8 @@ def main():
 
 
 if __name__ == "__main__":
-    _start_folder = r'd:\\_roru\\'[:-1]
-    _post_folder = '{}{}'.format(_start_folder, r'02_post\\'[:-1])  # r'd:\_roru\post\\'[:-1]
-    _list_folder = '{}{}'.format(_start_folder, r'01_list\\'[:-1])  # r'd:\_roru\list\\'[:-1]
+    _post_folder = config._POST
+    _list_folder = config._PAGES
     _list_files = os.listdir(_list_folder)
 
     # -----------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     for _list_file in _list_files:
         if _list_file != '':
-            _file_name = '{}{}'.format(_list_folder, _list_file)
+            _file_name = f"{_list_folder}{_list_file}"
             with open(_file_name, 'r', encoding='UTF-8') as fileR:
                 FileDataStr = fileR.read()
 
