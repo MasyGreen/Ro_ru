@@ -5,11 +5,11 @@ from multiprocessing import Queue
 from lxml import html
 from xml.etree import ElementTree as ET
 import re
+import config
 
 # ШАГ 3
-# ПРОХОДИМ ПО ВСЕМ СКАЧАННЫМ ПОСТАМ В _folder_post = r'..\02_post\\'[:-1]  # каталог с постами - для чтения
-# РАЗБИРАЕМ КАЖДЫЙ ПОСТ И ФОРМИРУЕМ РАЗОБРАННУЮ ИНФОРМАЦИЮ ИЗ ПОСТОВ В
-# _folder_post_prs = r'..\03_post_prs\\'[:-1]  # каталог для записи
+# ПРОХОДИМ ПО ВСЕМ СКАЧАННЫМ ПОСТАМ В 02_Post
+# РАЗБИРАЕМ КАЖДЫЙ ПОСТ И ФОРМИРУЕМ РАЗОБРАННУЮ ИНФОРМАЦИЮ ИЗ ПОСТОВ В 03_PostProcess
 #
 # ДОПУЩЕНИЯ:
 # ВЕДУЩИЙ ТОТ КТО СОЗДАЛ ПЕРВЫЙ ПОСТ
@@ -25,7 +25,7 @@ unit_month = {'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', '�
 
 def get_date_from_str(d_str):  # разбираем дату типа '28', 'мар', '2007'
     s_str_s = d_str.split(' ')
-    var_date = '{}.{}.{}'.format(s_str_s[0], unit_month[s_str_s[1]], s_str_s[2])
+    var_date = f'{s_str_s[0]}.{unit_month[s_str_s[1]]}.{s_str_s[2]}'
     return var_date
 
 
@@ -39,7 +39,7 @@ def add_el_user(user_code, user_name):  # пользователи
 
 def add_el_post_user(user_code, user_name,
                      post_code, post_date, master_code, master_name):  # посты
-    _find_str = '{}{}'.format(user_code, post_code)
+    _find_str = f'{user_code}{post_code}'
     if not _find_str in _post_user_u:
         _post_user_u.append(_find_str)
         _row = {"user_code": user_code,
@@ -98,7 +98,7 @@ def parse_file(_list_file):
         if True:
         #if _list_file == '56678.html':
             #print(_list_file)
-            _file_name = '{}{}'.format(_export_folder, _list_file)  # html с постом
+            _file_name = f'{_export_folder}{_list_file}'  # html с постом
             # ----------------------------------------------------------------------------
             # Получаем перый пост, в нем вся нужная информация
             # ----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ def parse_file(_list_file):
                         # print(re.findall('cap-div', txt_link))
                         # print(html.tostring(links[1], encoding='unicode'))
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', 'main_post'))
+                print(f'Error {_list_file} (main_post)')
 
             # print(html.tostring(first_post, encoding='unicode'))
 
@@ -132,20 +132,20 @@ def parse_file(_list_file):
             # ----------------------------------------------------------------------------
             try:
                 _post_name = links_h3[0].text  # Название покатушки
-                #print('{} = {}'.format('_post_name', _post_name))
+                # print(f'_post_name = {_post_name}')
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', '_post_name'))
+                print(f'Error {_list_file} (_post_name)')
                 _post_name = '########'
 
             try:
                 _links_nofollow = main_post.xpath('.//a[@rel="nofollow"]')
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', '_links_nofollow'))
+                print(f'Error {_list_file} (_links_nofollow)')
 
             try:
                 head_post = main_post.xpath('.//div[@class="postbody"]')
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', 'head_post'))
+                print(f'Error {_list_file} (head_post)')
 
             # print(html.tostring(head_post[0], encoding='unicode'))
 
@@ -162,7 +162,7 @@ def parse_file(_list_file):
                     _post_date = get_date_from_str(_links_postdate)
                     #print('{} = {}'.format('_post_date', _post_date))
                 except:
-                    print('Error {}_{}({})'.format(_list_file, 'Error', '_post_date'))
+                    print(f'Error {_list_file} (_post_date)')
                     _post_date = '##/##/####'
 
             # Имя ведущего
@@ -171,7 +171,7 @@ def parse_file(_list_file):
                 _user_name = _links_nofollow[0].text
                 #print('{} = {}'.format('_user_name', _user_name))
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', '_user_name'))
+                print(f'Error {_list_file} (_user_name)')
                 _user_name = '########'
 
             # Код ведущего
@@ -186,7 +186,7 @@ def parse_file(_list_file):
 
                 #print('{} = {}'.format('_user_code', _user_code))
             except:
-                print('Error {}_{}({})'.format(_list_file, 'Error', '_user_code'))
+                print(f'Error {_list_file} (_user_code)')
                 _user_code = '########'
 
             # Участники покатушки
@@ -196,12 +196,12 @@ def parse_file(_list_file):
                              _user_name)  # получаем коды отметившихся/заполняем таблицы user, postuser
             except:
                 add_el_post_user(_user_code, _user_name, _post_code,'','','')
-                print('Error {}_{}({})'.format(_list_file, 'Error', 'get_post_user'))
+                print(f'Error {_list_file} (get_post_user)')
 
             #  записываем в XML
             add_el_post(_post_code, _post_name, _post_date, _user_code, _user_name)
     except:
-        print('Error {}_{}'.format(_list_file, 'Error'))
+        print(f'Error {_list_file}')
 
 def process(dw_TheadName):
     while not work_queue.empty():
@@ -214,7 +214,7 @@ def main():
 
     list_th = []
     for i in range(50):
-        p1 = Thread(target=process,  args=['Thead{}'.format(i)])
+        p1 = Thread(target=process,  args=[f'Thead{i}'])
         list_th.append(p1)
 
     for th in list_th:
@@ -224,7 +224,7 @@ def main():
         th.join()
 
     # ----------------------------file exchange----------------------------------------
-    _export_xml_file = '{}{}'.format(_folder_post_prs, 'full_data.xml')  # имя файла
+    _export_xml_file = f'{_folder_post_prs}full_data.xml'  # имя файла
     _xml_root = ET.Element("root")  # корневой элемент
     _xml_references = ET.SubElement(_xml_root, "references")  # общее дерево
 
@@ -268,9 +268,8 @@ def main():
 
 
 if __name__ == "__main__":
-    _start_folder = r'd:\\_roru\\'[:-1]
-    _export_folder = '{}{}'.format(_start_folder, r'02_post\\'[:-1])  #   # каталог с постами - для чтения
-    _folder_post_prs = '{}{}'.format(_start_folder, r'03_post_prs\\'[:-1])  # # каталог с постами - для чтения
+    _export_folder = config._POST #   # каталог с постами - для чтения
+    _folder_post_prs = config._POSTPROCESS  # # каталог с постами - для чтения
 
     _list_files = os.listdir(_export_folder)  # получаем все файлы с постами
 

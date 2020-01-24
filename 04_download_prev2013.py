@@ -3,6 +3,7 @@ from lxml import html
 from threading import Thread
 from multiprocessing import Queue
 import requests
+import config
 
 # ШАГ 4
 # ПРОХОДИМ ПО ВСЕМ ПОСТАМ В ..\03_post_prs\full_data.xml './/reference[@reference_name="post"]/item'
@@ -31,15 +32,10 @@ def get_html(dw_url):
 
 
 def parse_post(dw_code_post, dw_code_user):
-    #_stp = r'd:\_roru\\'[:-1]
-    _file_post_parse2013 = '{}{}'.format(_stp, r'04_post_2013\\'[:-1])  # папка с постами
-
-    # ----------------------------------------------------------------------------
     # Получаем первый файл поста
-    page_url = '{}{}'.format('https://www.roller.ru/forum/viewtopic.php?f=3&t=', dw_code_post)  # ссылка для скачивания
+    page_url = f'https://www.roller.ru/forum/viewtopic.php?f=3&t={dw_code_post}'  # ссылка для скачивания
     _txt_first_page = get_html(page_url)
-    _path_file = '{}{}_{}_{}{}'.format(_file_post_parse2013, dw_code_post, dw_code_user, '0',
-                                       '.html')  # путь для сохранения
+    _path_file = f'{_file_post_parse2013}{dw_code_post}_{dw_code_user}_0.html'# путь для сохранения
     _value_file = parse_file(_txt_first_page)
     print(_path_file)
     with open(_path_file, 'w', encoding='UTF-8') as fw:
@@ -51,11 +47,10 @@ def parse_post(dw_code_post, dw_code_user):
     _max_page = int(_max_pages.text)
     _post_count = 15 * _max_page
     for _i in range(15, _post_count, 15):
-        page_url = 'https://www.roller.ru/forum/viewtopic.php?f=3&t={}&start={}'.format(dw_code_post, str(_i))
+        page_url = f'https://www.roller.ru/forum/viewtopic.php?f=3&t={dw_code_post}&start={str(_i)}'
         print(page_url)
         _txt_page = get_html(page_url)
-        _path_file = '{}{}_{}_{}{}'.format(_file_post_parse2013, dw_code_post, dw_code_user, str(_i),
-                                           '.html')  # путь для сохранения
+        _path_file = f'{_file_post_parse2013}{dw_code_post}_{dw_code_user}_{str(_i)}.html' # путь для сохранения
         _value_file = parse_file(_txt_page)
         with open(_path_file, 'w', encoding='UTF-8') as fw:
             fw.write(_value_file)
@@ -67,7 +62,7 @@ def process(dw_TheadName):
         _code_post = _post_uq.split('_')[0]
         _code_user = _post_uq.split('_')[1]
         time.sleep(.1)
-        print('THEAD {} {} - {}'.format(_code_post, _code_user, dw_TheadName))
+        print(f'THEAD {_code_post} {_code_user} - {dw_TheadName}')
         parse_post(_code_post, _code_user)
 
 
@@ -87,14 +82,14 @@ def main():
             if len(_post_date.split('.')) == 3:
                 _year = int(_post_date.split('.')[2])
                 if _year <= 2013:
-                    _list_post_prev2013.append('{}_{}'.format(_post.get('post_code'), _post.get('user_code')))
-                    print('{}_{}'.format(_post.get('post_code'), _post.get('user_code')))
+                    _list_post_prev2013.append(f"{_post.get('post_code')}_{_post.get('user_code')}")
+                    print(f"{_post.get('post_code')}_{_post.get('user_code')}")
+
     # -------------------------------------------------------------------------------------------------
     print('------------СЧИТАЕМ УЧАСТНИКОВ ПОКАТУШЕК--------------')
     _list_post_nouser = []
     _list_post_nouser.clear()
     # проходим по списку постов и считаем кол-во участинков
-    _file_post_user = '{}{}'.format(_stp, r'03_post_prs\full_data.xml')  # файл с участниками
     with open(_file_post_user, 'r', encoding='UTF-8') as fileR:
         file_data_str = fileR.read()
         _posts_userXML = html.fromstring(file_data_str)  # загружаем в строку
@@ -117,7 +112,7 @@ def main():
         work_queue.put(_post)
     list_th = []
     for i in range(20):
-        p1 = Thread(target=process, args=['Thead{}'.format(i)])
+        p1 = Thread(target=process, args=[f'Thead{i}'])
         list_th.append(p1)
 
     for th in list_th:
@@ -128,9 +123,9 @@ def main():
 
 
 if __name__ == "__main__":
-    # -------------------------------------------------------------------------------------------------
-    _stp = r'd:\_roru\\'[:-1]
-    _file_post_prs = '{}{}'.format(_stp, r'03_post_prs\full_data.xml')  # файл с постами
+    _file_post_parse2013 = config._POST2013  # папка с постами
+    _file_post_prs = f'{config._POSTPROCESS}full_data.xml'  # файл с постами
+    _file_post_user = _file_post_prs  # файл с участниками
     # -------------------------------------------------------------------------------------------------
     work_queue = Queue()
 
