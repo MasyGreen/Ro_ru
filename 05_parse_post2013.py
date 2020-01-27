@@ -7,13 +7,13 @@ import requests
 import glob
 from xml.etree import ElementTree as ET
 import re
+import config
 
-_stp = r'd:\_roru\\'[:-1]
-_folder_post_parse2013 = '{}{}'.format(_stp, r'04_post_2013\\'[:-1])  # папка с постами 2013 года
+_folder_post_parse2013 = config._POST2013  # папка с постами 2013 года
 
 def write_user_to_xml(d_user_code, d_user_name):  # пишем уникальных пльзователй в xml
     _UUE_Array_El = [d_user_code,
-                     '{}{}'.format('https://www.roller.ru/forum/memberlist.php?mode=viewprofile&u=', d_user_code),
+                     f'https://www.roller.ru/forum/memberlist.php?mode=viewprofile&u={d_user_code}',
                      d_user_name]
     _UUE_Array.append(_UUE_Array_El)
 
@@ -22,17 +22,17 @@ def write_post_user_to_xml(d_user_code, d_user_name,
                            d_post_code):  # пишем набор +1 на покатушку _user_code,_user_name, d_post_code
     _PU_Array_El = [d_user_code,
                     d_user_name,
-                    '{}{}'.format('https://www.roller.ru/forum/memberlist.php?mode=viewprofile&u=', d_user_code),
+                    f'https://www.roller.ru/forum/memberlist.php?mode=viewprofile&u={d_user_code}',
                     d_post_code,
-                    '{}{}'.format('https://www.roller.ru/forum/viewtopic.php?f=3&t=', d_post_code)]
+                    f'https://www.roller.ru/forum/viewtopic.php?f=3&t={d_post_code}']
     _PU_Array.append(_PU_Array_El)
 
 def parse_post(dw_post_uq):
-    _files = glob.glob('{}{}*.html'.format(_folder_post_parse2013, dw_post_uq))
+    _files = glob.glob(f'{_folder_post_parse2013}\\{dw_post_uq}*.html')
     _user_inpost_unique = []
     _user_inpost_unique.clear()
     for _file in _files:
-        print('{}, {}'.format(_file, work_queue.qsize()))
+        print(f'{_file}, {work_queue.qsize()}')
         with open(_file, 'r', encoding='UTF-8') as fileR:
             _str = fileR.read()
             _main_tree = html.fromstring(_str)  # загружаем в строку
@@ -61,14 +61,14 @@ def process(dw_TheadName):
     while not work_queue.empty():
         _post_uq = work_queue.get()
         # time.sleep(.1)
-        print('THEAD {} - {}'.format(_post_uq, dw_TheadName))
+        print(f'THEAD {_post_uq} - {dw_TheadName}')
         parse_post(_post_uq)
 
 
 def main():
     list_th = []
-    for i in range(200):
-        p1 = Thread(target=process, args=['Thead{}'.format(i)])
+    for i in range(50):
+        p1 = Thread(target=process, args=[f'Thead{i}'])
         list_th.append(p1)
 
     for th in list_th:
@@ -76,10 +76,10 @@ def main():
 
     for th in list_th:
         th.join()
-    _folder_post_prs = '{}{}'.format(_stp, r'03_post_prs\\'[:-1])  # каталог для записи
+    _folder_post_prs = config._POSTPROCESS # каталог для записи
 
     # ----------------------------file exchange----------------------------------------
-    _export_xml_file = '{}{}'.format(_folder_post_prs, 'full_data_2013.xml')  # имя файла
+    _export_xml_file = f'{_folder_post_prs}\\full_data_2013.xml'  # имя файла
     _xml_root = ET.Element("root")  # корневой элемент
     _xml_references = ET.SubElement(_xml_root, "references")  # общее дерево
 
@@ -120,7 +120,8 @@ if __name__ == "__main__":
     _list_files = os.listdir(_folder_post_parse2013)  # получаем все файлы с постами (48341_83391_0.html, 48341_83391_1.html....)
     for _file in _list_files:
         _post_user = _file.split('.')[0]
-        _post_user = '{}_{}'.format(_post_user.split('_')[0], _post_user.split('_')[1])
+        _post_user = f"{_post_user.split('_')[0]}_{_post_user.split('_')[1]}"
+
         if _post_user not in _list_post:
             _list_post.append(_post_user)  #  выбираем уникальные наборы (пост+ведущий) 48341_83391_0.html = 48341_83391
     # -------------------------------------------------------------------------------------------------
